@@ -5,6 +5,12 @@ node_modules/
 dist/
 build/
 
+#Key files
+keys/
+
+# History files
+.history/
+
 # Environment
 .env
 .env.local
