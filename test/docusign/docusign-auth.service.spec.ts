@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
-import { DocusignAuthService } from '../../src/docusign/docusign-auth.service';
+import { AuthConsentService } from '../../src/auth/auth-consent.service';
 import { DocusignConfig } from '../../src/auth/auth.types';
 
 describe('DocusignAuthService', () => {
@@ -17,7 +17,7 @@ describe('DocusignAuthService', () => {
     accountId: 'account-123',
   };
 
-  let service: DocusignAuthService;
+  let service: AuthConsentService;
   let postMock: jest.Mock;
 
   beforeEach(() => {
@@ -37,14 +37,14 @@ describe('DocusignAuthService', () => {
       saveTokenFromCallback: jest.fn(),
     } as any;
 
-    service = new DocusignAuthService(configService, httpService, authService);
+    service = new AuthConsentService(configService, httpService, authService);
   });
 
   it('builds consent url', () => {
     const url = service.buildConsentUrl();
     expect(url).toContain('response_type=code');
     expect(url).toContain('client_id=integration-key');
-    expect(url).toContain(encodeURIComponent(docusignConfig.redirectUri));
+    expect(url).toContain(encodeURIComponent(docusignConfig.redirectUri!));
   });
 
   it('exchanges code for token', async () => {

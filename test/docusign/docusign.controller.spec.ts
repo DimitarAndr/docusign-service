@@ -1,10 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
 import { DocusignController } from '../../src/docusign/docusign.controller';
-import { DocusignAuthService } from '../../src/docusign/docusign-auth.service';
+import { AuthConsentService } from '../../src/auth/auth-consent.service';
 
 describe('DocusignController', () => {
   let controller: DocusignController;
-  let authService: DocusignAuthService;
+  let authService: AuthConsentService;
   let exchangeMock: jest.Mock;
 
   beforeEach(() => {
@@ -12,7 +12,7 @@ describe('DocusignController', () => {
     authService = {
       exchangeAuthorizationCode: exchangeMock,
       buildConsentUrl: jest.fn().mockReturnValue('https://example.com'),
-    } as unknown as DocusignAuthService;
+    } as unknown as AuthConsentService;
 
     controller = new DocusignController(authService);
   });
