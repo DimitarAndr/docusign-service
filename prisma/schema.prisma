@@ -15,3 +15,26 @@ model DocusignToken {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+model SentEnvelope {
+  id                 Int       @id @default(autoincrement())
+  envelopeId         String    @unique
+  documentId         String
+  subject            String?
+  message            String?
+  recipientEmail     String
+  recipientName      String
+  clientUserId       String?
+  status             String
+  docusignAccountId  String
+  sentAt             DateTime  @default(now())
+  lastStatus         String?
+  lastStatusCheckAt  DateTime?
+  errorMessage       String?
+  rawResponse        Json?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([status])
+  @@index([envelopeId, docusignAccountId])
+}

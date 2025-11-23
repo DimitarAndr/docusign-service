@@ -9,6 +9,7 @@ import { extname, join } from 'path';
 import { ConfigService } from '@nestjs/config';
 import { SendEnvelopeDto } from './dto/send-envelope.dto';
 import { DocusignService } from '../docusign/docusign.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class EnvelopesService {
@@ -20,6 +21,7 @@ export class EnvelopesService {
   constructor(
     private readonly docusignService: DocusignService,
     private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async sendEnvelope(dto: SendEnvelopeDto) {
@@ -83,6 +85,23 @@ export class EnvelopesService {
     });
 
     this.logger.log(`Envelope sent to ${dto.recipient.email}: ${result.envelopeId}`);
+
+    await this.prisma.sentEnvelope.create({
+      data: {
+        envelopeId: result.envelopeId,
+        documentId: dto.documentId,
+        subject: dto.subject,
+        message: dto.message,
+        recipientEmail: dto.recipient.email,
+        recipientName: dto.recipient.name,
+        clientUserId: dto.recipient.clientUserId,
+        status: result.status,
+        docusignAccountId: accountId,
+        sentAt: new Date(),
+        lastStatus: result.status,
+        rawResponse: result as unknown as object,
+      },
+    });
 
     return {
       envelopeId: result.envelopeId,

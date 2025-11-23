@@ -1,6 +1,6 @@
 {
   "name": "docusign-service",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "scripts": {
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -9,7 +9,13 @@
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:config": "jest --runTestsByPath test/config/env.validation.spec.ts"
+    "test:config": "jest --runTestsByPath test/config/env.validation.spec.ts",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:generate": "prisma generate",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

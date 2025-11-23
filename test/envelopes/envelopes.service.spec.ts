@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { EnvelopesService } from '../../src/envelopes/envelopes.service';
 import { DocusignService } from '../../src/docusign/docusign.service';
 import { SendEnvelopeDto } from '../../src/envelopes/dto/send-envelope.dto';
+import { PrismaService } from '../../src/prisma/prisma.service';
 
 jest.mock('fs', () => ({
   promises: {
@@ -12,12 +13,15 @@ jest.mock('fs', () => ({
 describe('EnvelopesService', () => {
   let service: EnvelopesService;
   let requestMock: jest.Mock;
+  let prismaCreateMock: jest.Mock;
 
   beforeEach(() => {
     requestMock = jest.fn().mockResolvedValue({
       envelopeId: 'env-123',
       status: 'sent',
     });
+
+    prismaCreateMock = jest.fn().mockResolvedValue({ id: 1 });
 
     const docusignService = {
       request: requestMock,
@@ -30,7 +34,13 @@ describe('EnvelopesService', () => {
       }),
     } as unknown as ConfigService;
 
-    service = new EnvelopesService(docusignService, configService);
+    const prismaService = {
+      sentEnvelope: {
+        create: prismaCreateMock,
+      },
+    } as unknown as PrismaService;
+
+    service = new EnvelopesService(docusignService, configService, prismaService);
   });
 
   it('sends an envelope via DocuSign API', async () => {
@@ -52,5 +62,6 @@ describe('EnvelopesService', () => {
 
     expect(result.envelopeId).toBe('env-123');
     expect(result.recipient).toBe(dto.recipient.email);
+    expect(prismaCreateMock).toHaveBeenCalled();
   });
 });
