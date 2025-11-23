@@ -4,7 +4,6 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import { extname, join } from 'path';
 import { ConfigService } from '@nestjs/config';
@@ -85,15 +84,11 @@ export class EnvelopesService {
 
     this.logger.log(`Envelope sent to ${dto.recipient.email}: ${result.envelopeId}`);
 
-    try {
-      return {
-        envelopeId: result.envelopeId,
-        status: result.status,
-        recipient: dto.recipient.email,
-        documentId: dto.documentId,
-      };
-    } catch (error) {
-      throw error;
-    }
+    return {
+      envelopeId: result.envelopeId,
+      status: result.status,
+      recipient: dto.recipient.email,
+      documentId: dto.documentId,
+    };
   }
 }

@@ -1,114 +1,95 @@
 # DocuSign Service
 
-NestJS microservice for managing DocuSign envelopes and documents with PostgreSQL and Prisma ORM.
+NestJS + PostgreSQL service for sending DocuSign envelopes. Uses JWT grant for server-to-server auth; DocuSign tokens are minted and cached by the backend.
 
 ## Quick Start
 
-### 1. Prerequisites
-
+### 1) Prerequisites
 - Node.js 20+
-- PostgreSQL database running
-- DocuSign Developer Account with:
-  - Integration Key
-  - User ID
-  - Account ID
-  - RSA Private Key (PEM format)
+- Docker (for local Postgres)
+- DocuSign developer account with Integration Key, User ID, Account ID, RSA private key (PEM)
 
-### 2. Installation
+### 2) Configure environment
+```bash
+cp .env.example .env
+mkdir -p keys
+# place your DocuSign private key at keys/private.pem
+```
 
+Example `.env` (works with docker-compose Postgres):
+```
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/docusign?schema=public"
+DOCUSIGN_INTEGRATION_KEY=your_integration_key
+DOCUSIGN_USER_ID=your_user_guid
+DOCUSIGN_ACCOUNT_ID=your_account_guid
+DOCUSIGN_CLIENT_SECRET=your_client_secret   # only needed for auth code grant
+DOCUSIGN_PRIVATE_KEY_PATH=./keys/private.pem
+```
+
+### 3) Install deps
 ```bash
 npm install
 ```
 
-### 3. Configuration
-
-1. Copy `.env.example` to `.env`:
+### 4) Run with Docker (app + Postgres)
 ```bash
-cp .env.example .env
+docker-compose up --build
 ```
+- Postgres: `localhost:5432` (user/pass `postgres`/`postgres`, db `docusign`)
+- App: `http://localhost:3000`
 
-2. Update `.env` with your values:
-```env
-DATABASE_URL="postgresql://username:password@localhost:5432/docusign?schema=public"
-DOCUSIGN_INTEGRATION_KEY=your_integration_key
-DOCUSIGN_USER_ID=your_user_id
-DOCUSIGN_ACCOUNT_ID=your_account_id
-DOCUSIGN_CLIENT_SECRET=your_client_secret
-DOCUSIGN_PRIVATE_KEY_PATH=./keys/private.pem
-```
-
-3. Place your DocuSign private key:
-```bash
-mkdir -p keys
-# Copy your private.pem file to keys/private.pem
-```
-
-### 4. Database Setup
-
+### 5) Database setup (local dev)
 ```bash
 npx prisma generate
-npx prisma migrate deploy
+npx prisma migrate dev --name init
 ```
 
-### 5. Start the Service
-
-```bash
-npm run start:dev
+### 6) Grant DocuSign consent (once, for JWT)
+Open in browser (replace with your integration key):
 ```
+https://account-d.docusign.com/oauth/auth?response_type=code&scope=signature%20impersonation&client_id=<integration_key>&redirect_uri=http://localhost:3000/auth/docusign/callback
+```
+Sign in and allow.
 
-Service will be available at `http://localhost:3000`
-
-### 6. Grant DocuSign Consent (Required Once)
-
-**Option A: Browser**
-1. Visit `http://localhost:3000/auth/docusign/authorize`
-2. Login to DocuSign
-3. Click "Allow" to grant consent
-
-**Option B: Postman**
-1. Import `postman/DocuSign Service.postman_collection.json`
-2. Run "Auth > Get Consent URL"
-3. Copy the URL from response
-4. Open URL in browser and grant consent
-
-### 7. Test the API
-
-Using Postman:
-1. Run "Envelopes > Send Envelope (JWT)"
-2. Check the response for `envelopeId`
-
-Or using curl:
+### 7) Send an envelope
 ```bash
 curl -X POST http://localhost:3000/envelopes \
   -H "Content-Type: application/json" \
   -d '{
     "documentId": "sample-nda",
-    "recipient": {
-      "name": "John Doe",
-      "email": "john@example.com"
-    },
+    "recipient": { "name": "John Doe", "email": "john@example.com" },
     "subject": "Please sign this document",
     "message": "Thank you!"
   }'
 ```
+Or import `postman/DocuSign Service.postman_collection.json` and run “Send Envelope (JWT)”.
 
-## Docker
+## Environment Variables
 
+| Name | Required | Description |
+| --- | --- | --- |
+| `DATABASE_URL` | yes | Postgres connection string (`postgresql://user:pass@host:port/db?schema=public`) |
+| `DOCUSIGN_INTEGRATION_KEY` | yes | DocuSign app client ID |
+| `DOCUSIGN_USER_ID` | yes | DocuSign API user GUID (impersonated user) |
+| `DOCUSIGN_ACCOUNT_ID` | yes | DocuSign account GUID |
+| `DOCUSIGN_AUTH_SERVER` | no | Auth server (`https://account-d.docusign.com` demo) |
+| `DOCUSIGN_API_BASE` | no | REST base (`https://demo.docusign.net/restapi`) |
+| `DOCUSIGN_SCOPES` | no | Scopes (default `signature impersonation`) |
+| `DOCUSIGN_PRIVATE_KEY_PATH` | yes | Path to RSA private key PEM |
+| `DOCUSIGN_CLIENT_SECRET` | optional | Only for authorization code grant |
+| `DOCUSIGN_REDIRECT_URI` | optional | Redirect URI for code grant |
+
+## Testing & Lint
 ```bash
-docker-compose up
+npm run lint
+npm test
 ```
 
-## API Documentation
-
-Swagger UI available at: `http://localhost:3000/api`
+## API Docs
+- Swagger UI: `http://localhost:3000/docs`
+- OpenAPI JSON: `http://localhost:3000/docs-json`
 
 ## Troubleshooting
-
-**Error: "Failed to obtain DocuSign access token"**
-- Make sure you've granted consent (Step 6)
-- Verify your integration key and user ID are correct
-- Check that private key file exists and is valid
-
-**Error: "DocuSign configuration not loaded"**
-- Verify all required environment variables are set
-- Check `.env` file exists and has correct values
+- `invalid_grant` / `no_valid_keys_or_signatures`: regenerate RSA key for this integration key in DocuSign, update `keys/private.pem`, ensure `DOCUSIGN_USER_ID` matches consented user.
+- `Failed to obtain DocuSign access token`: check env vars, key path, consent.
+- DB connection issues: ensure Postgres is running (`docker-compose up`) and `DATABASE_URL` points to it.

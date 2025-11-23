@@ -39,18 +39,14 @@ export class AuthConsentService {
    * Build OAuth consent URL for user authorization
    */
   buildConsentUrl(): string {
-    try {
-      const config = this.getConfig();
-      const params = new URLSearchParams({
-        response_type: 'code',
-        scope: config.scopes.join(' '),
-        client_id: config.integrationKey,
-        redirect_uri: config.redirectUri || '',
-      });
-      return `${config.authServer.replace(/\/+$/, '')}/oauth/auth?${params.toString()}`;
-    } catch (error) {
-      throw error;
-    }
+    const config = this.getConfig();
+    const params = new URLSearchParams({
+      response_type: 'code',
+      scope: config.scopes.join(' '),
+      client_id: config.integrationKey,
+      redirect_uri: config.redirectUri || '',
+    });
+    return `${config.authServer.replace(/\/+$/, '')}/oauth/auth?${params.toString()}`;
   }
 
   /**
@@ -99,17 +95,13 @@ export class AuthConsentService {
   }
 
   private getConfig(requireSecret = false): DocusignConfig {
-    try {
-      const cfg = this.configService.get<DocusignConfig>('docusign');
-      if (!cfg) {
-        throw new InternalServerErrorException('DocuSign configuration not loaded');
-      }
-      if (requireSecret && !cfg.clientSecret) {
-        throw new BadRequestException('DOCUSIGN_CLIENT_SECRET is required for code exchange');
-      }
-      return cfg;
-    } catch (error) {
-      throw error;
+    const cfg = this.configService.get<DocusignConfig>('docusign');
+    if (!cfg) {
+      throw new InternalServerErrorException('DocuSign configuration not loaded');
     }
+    if (requireSecret && !cfg.clientSecret) {
+      throw new BadRequestException('DOCUSIGN_CLIENT_SECRET is required for code exchange');
+    }
+    return cfg;
   }
 }

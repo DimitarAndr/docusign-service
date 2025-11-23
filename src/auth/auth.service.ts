@@ -32,16 +32,12 @@ export class AuthService {
     private readonly httpService: HttpService,
     private readonly prisma: PrismaService,
   ) {
-    try {
-      const config = this.configService.get<DocusignConfig>('docusign');
-      if (!config) {
-        throw new InternalServerErrorException('DocuSign configuration not loaded');
-      }
-      this.docusignConfig = config;
-      this.privateKeyPromise = readFile(this.docusignConfig.privateKeyPath, 'utf8');
-    } catch (error) {
-      throw error;
+    const config = this.configService.get<DocusignConfig>('docusign');
+    if (!config) {
+      throw new InternalServerErrorException('DocuSign configuration not loaded');
     }
+    this.docusignConfig = config;
+    this.privateKeyPromise = readFile(this.docusignConfig.privateKeyPath, 'utf8');
   }
 
   /**
@@ -166,7 +162,9 @@ export class AuthService {
       const resp = error?.response;
       const status = resp?.status;
       this.logger.error(
-        `DocuSign token request failed${status ? ` (status ${status})` : ''}`,
+        `DocuSign token request failed${status ? ` (status ${status})` : ''}: ${
+          resp?.data ? JSON.stringify(resp.data) : error?.message || 'Unknown error'
+        }`,
       );
       throw new InternalServerErrorException('Failed to obtain DocuSign access token');
     }
