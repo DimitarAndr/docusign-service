@@ -7,6 +7,7 @@ import configuration from './config/configuration';
 import { AuthModule } from './auth/auth.module';
 import { DocusignModule } from './docusign/docusign.module';
 import { EnvelopesModule } from './envelopes/envelopes.module';
+import { HealthModule } from './health/health.module';
 import { LoggerModule } from 'nestjs-pino';
 
 @Module({
@@ -34,6 +35,7 @@ import { LoggerModule } from 'nestjs-pino';
     AuthModule,
     DocusignModule,
     EnvelopesModule,
+    HealthModule,
     PrismaModule,
   ],
   controllers: [AppController],
