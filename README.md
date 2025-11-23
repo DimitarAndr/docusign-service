@@ -85,6 +85,117 @@ npm run lint
 npm test
 ```
 
+## Health & Readiness Endpoints
+
+### `/health` - Health Check
+Returns basic service health status. Always returns 200 OK if the service is running.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2025-01-15T10:30:00.000Z",
+  "uptime": "3600s",
+  "version": "1.0.0",
+  "environment": "production",
+  "memory": {
+    "rss": "150MB",
+    "heapUsed": "80MB",
+    "heapTotal": "120MB"
+  },
+  "cpu": {
+    "user": "5000ms",
+    "system": "1000ms"
+  }
+}
+```
+
+**Use Cases:**
+- Basic liveness probe for Kubernetes/ECS
+- Monitoring service uptime
+- Quick health dashboard
+
+### `/ready` - Readiness Check
+Validates that the service is ready to handle traffic. Returns 503 if any dependency is unavailable.
+
+**Checks:**
+- ✅ PostgreSQL database connection
+- ✅ DocuSign API reachability
+- ✅ Required environment variables
+- ✅ Memory usage within limits
+
+**Response (Healthy):**
+```json
+{
+  "status": "ok",
+  "info": {
+    "database": { "status": "up" },
+    "docusign": { "status": "up", "message": "DocuSign API is reachable" },
+    "environment": { "status": "up", "message": "All required env vars present" },
+    "memory_heap": { "status": "up" },
+    "memory_rss": { "status": "up" }
+  },
+  "error": {},
+  "details": { ... }
+}
+```
+
+**Response (Unhealthy):**
+```json
+{
+  "status": "error",
+  "info": { ... },
+  "error": {
+    "database": { "status": "down", "message": "Connection timeout" }
+  },
+  "details": { ... }
+}
+```
+
+**Use Cases:**
+- Kubernetes readiness probe
+- Load balancer health checks
+- Pre-deployment validation
+- Circuit breaker integration
+
+### Production Deployment
+
+**Docker/Kubernetes:**
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  failureThreshold: 3
+```
+
+**AWS ECS:**
+```json
+{
+  "healthCheck": {
+    "command": ["CMD-SHELL", "curl -f http://localhost:3000/ready || exit 1"],
+    "interval": 30,
+    "timeout": 5,
+    "retries": 3
+  }
+}
+```
+
+**Benefits:**
+- Zero-downtime deployments
+- Automatic traffic routing
+- Early failure detection
+- Improved reliability and uptime
+
 ## API Docs
 - Swagger UI: `http://localhost:3000/docs`
 - OpenAPI JSON: `http://localhost:3000/docs-json`
