@@ -1,0 +1,65 @@
+{
+  "info": {
+    "_postman_id": "6c061c37-3f0e-4b54-9b28-4c27f641af05",
+    "name": "DocuSign Service",
+    "description": "Send envelopes via JWT-authenticated backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Envelopes",
+      "item": [
+        {
+          "name": "Send Envelope (JWT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentId\": \"sample-nda\",\n  \"recipient\": {\n    \"name\": \"Jane Doe\",\n    \"email\": \"jane@example.com\"\n  },\n  \"subject\": \"Please sign\",\n  \"message\": \"Thanks!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/envelopes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "envelopes"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"envelopeId present\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.envelopeId).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    }
+  ]
+}
