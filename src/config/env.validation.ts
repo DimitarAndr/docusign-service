@@ -21,5 +21,13 @@ export const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 export function validateEnv() {
-  return envSchema.parse(process.env);
+  try {
+    return envSchema.parse(process.env);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const missingVars = error.issues.map(e => e.path.join('.')).join(', ');
+      throw new Error(`Environment validation failed: ${missingVars}`);
+    }
+    throw error;
+  }
 }

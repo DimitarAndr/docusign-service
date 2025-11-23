@@ -13,11 +13,15 @@ export class DocusignController {
   @ApiExcludeEndpoint()
   @Header('Content-Type', 'text/html')
   authorize(@Query('redirect') redirect?: string) {
-    const url = this.authConsentService.buildConsentUrl();
-    if (redirect === 'false') {
-      return { url };
+    try {
+      const url = this.authConsentService.buildConsentUrl();
+      if (redirect === 'false') {
+        return { url };
+      }
+      return `<html><body>Redirecting to DocuSign...<script>window.location.href='${url}'</script></body></html>`;
+    } catch (error) {
+      throw error;
     }
-    return `<html><body>Redirecting to DocuSign...<script>window.location.href='${url}'</script></body></html>`;
   }
 
   @Get('callback')

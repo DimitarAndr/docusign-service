@@ -9,7 +9,11 @@ export class AuthController {
   @Get('token')
   @ApiExcludeEndpoint()
   async getToken() {
-    const accessToken = await this.authService.getAccessToken();
-    return { accessToken };
+    try {
+      const accessToken = await this.authService.getAccessToken();
+      return { accessToken };
+    } catch (error) {
+      throw error;
+    }
   }
 }

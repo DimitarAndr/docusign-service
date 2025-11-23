@@ -34,7 +34,13 @@ export class EnvelopesService {
       throw new NotFoundException(`Document not found for id: ${dto.documentId}`);
     }
 
-    const document = await fs.readFile(documentPath);
+    let document: Buffer;
+    try {
+      document = await fs.readFile(documentPath);
+    } catch (error) {
+      this.logger.error(`Failed to read document: ${dto.documentId}`);
+      throw new InternalServerErrorException('Failed to read document file');
+    }
     const documentBase64 = document.toString('base64');
     const fileExtension = extname(documentPath).replace('.', '') || 'html';
     const emailSubject = dto.subject || 'Please sign the document';
@@ -79,11 +85,15 @@ export class EnvelopesService {
 
     this.logger.log(`Envelope sent to ${dto.recipient.email}: ${result.envelopeId}`);
 
-    return {
-      envelopeId: result.envelopeId || randomUUID(),
-      status: result.status,
-      recipient: dto.recipient.email,
-      documentId: dto.documentId,
-    };
+    try {
+      return {
+        envelopeId: result.envelopeId,
+        status: result.status,
+        recipient: dto.recipient.email,
+        documentId: dto.documentId,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 }
