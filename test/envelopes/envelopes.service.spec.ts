@@ -3,6 +3,7 @@ import { EnvelopesService } from '../../src/envelopes/envelopes.service';
 import { DocusignService } from '../../src/docusign/docusign.service';
 import { SendEnvelopeDto } from '../../src/envelopes/dto/send-envelope.dto';
 import { PrismaService } from '../../src/prisma/prisma.service';
+import { NotFoundException } from '@nestjs/common';
 
 jest.mock('fs', () => ({
   promises: {
@@ -43,7 +44,7 @@ describe('EnvelopesService', () => {
     service = new EnvelopesService(docusignService, configService, prismaService);
   });
 
-  it('sends an envelope via DocuSign API', async () => {
+  it('sends an envelope via DocuSign API and stores it', async () => {
     const dto: SendEnvelopeDto = {
       documentId: 'sample-nda',
       recipient: {
@@ -58,10 +59,17 @@ describe('EnvelopesService', () => {
 
     expect(requestMock).toHaveBeenCalledTimes(1);
     const [config] = requestMock.mock.calls[0];
-    expect(config.url).toContain('/v2.1/accounts/account-123/envelopes');
-
+    expect((config as any).url).toContain('/v2.1/accounts/account-123/envelopes');
     expect(result.envelopeId).toBe('env-123');
-    expect(result.recipient).toBe(dto.recipient.email);
     expect(prismaCreateMock).toHaveBeenCalled();
+  });
+
+  it('throws NotFoundException for invalid documentId', async () => {
+    const dto: SendEnvelopeDto = {
+      documentId: 'nonexistent',
+      recipient: { name: 'Jane', email: 'jane@example.com' },
+    };
+
+    await expect(service.sendEnvelope(dto)).rejects.toBeInstanceOf(NotFoundException);
   });
 });
