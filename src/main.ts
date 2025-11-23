@@ -9,4 +9,11 @@ async function bootstrap() {
   setupSwagger(app);
   await app.listen(process.env.PORT || 3000);
 }
-bootstrap();
+
+bootstrap().catch((error: unknown) => {
+  const errorMessage = error instanceof Error 
+    ? error.message.replace(/[\r\n\t]/g, ' ').substring(0, 200)
+    : 'Unknown error';
+  console.error('Failed to start application:', errorMessage);
+  process.exit(1);
+});

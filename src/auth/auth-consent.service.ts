@@ -39,14 +39,18 @@ export class AuthConsentService {
    * Build OAuth consent URL for user authorization
    */
   buildConsentUrl(): string {
-    const config = this.getConfig();
-    const params = new URLSearchParams({
-      response_type: 'code',
-      scope: config.scopes.join(' '),
-      client_id: config.integrationKey,
-      redirect_uri: config.redirectUri || '',
-    });
-    return `${config.authServer.replace(/\/+$/, '')}/oauth/auth?${params.toString()}`;
+    try {
+      const config = this.getConfig();
+      const params = new URLSearchParams({
+        response_type: 'code',
+        scope: config.scopes.join(' '),
+        client_id: config.integrationKey,
+        redirect_uri: config.redirectUri || '',
+      });
+      return `${config.authServer.replace(/\/+$/, '')}/oauth/auth?${params.toString()}`;
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**
@@ -73,29 +77,39 @@ export class AuthConsentService {
       'base64',
     );
 
-    const { data } = await this.httpService.axiosRef.post<TokenResponse>(
-      tokenEndpoint,
-      params.toString(),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Basic ${basicAuth}`,
+    try {
+      const { data } = await this.httpService.axiosRef.post<TokenResponse>(
+        tokenEndpoint,
+        params.toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Authorization: `Basic ${basicAuth}`,
+          },
         },
-      },
-    );
+      );
 
-    this.logger.log('DocuSign tokens acquired, saving to database');
-    await this.authService.saveTokenFromCallback(data);
+      this.logger.log('DocuSign tokens acquired, saving to database');
+      await this.authService.saveTokenFromCallback(data);
+    } catch (error: any) {
+      const message = error?.response?.data ? JSON.stringify(error.response.data) : error?.message;
+      this.logger.error(`Failed to exchange authorization code: ${message}`);
+      throw new InternalServerErrorException('Failed to exchange authorization code');
+    }
   }
 
   private getConfig(requireSecret = false): DocusignConfig {
-    const cfg = this.configService.get<DocusignConfig>('docusign');
-    if (!cfg) {
-      throw new InternalServerErrorException('DocuSign configuration not loaded');
+    try {
+      const cfg = this.configService.get<DocusignConfig>('docusign');
+      if (!cfg) {
+        throw new InternalServerErrorException('DocuSign configuration not loaded');
+      }
+      if (requireSecret && !cfg.clientSecret) {
+        throw new BadRequestException('DOCUSIGN_CLIENT_SECRET is required for code exchange');
+      }
+      return cfg;
+    } catch (error) {
+      throw error;
     }
-    if (requireSecret && !cfg.clientSecret) {
-      throw new BadRequestException('DOCUSIGN_CLIENT_SECRET is required for code exchange');
-    }
-    return cfg;
   }
 }

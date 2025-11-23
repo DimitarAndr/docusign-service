@@ -32,12 +32,16 @@ export class AuthService {
     private readonly httpService: HttpService,
     private readonly prisma: PrismaService,
   ) {
-    const config = this.configService.get<DocusignConfig>('docusign');
-    if (!config) {
-      throw new InternalServerErrorException('DocuSign configuration not loaded');
+    try {
+      const config = this.configService.get<DocusignConfig>('docusign');
+      if (!config) {
+        throw new InternalServerErrorException('DocuSign configuration not loaded');
+      }
+      this.docusignConfig = config;
+      this.privateKeyPromise = readFile(this.docusignConfig.privateKeyPath, 'utf8');
+    } catch (error) {
+      throw error;
     }
-    this.docusignConfig = config;
-    this.privateKeyPromise = readFile(this.docusignConfig.privateKeyPath, 'utf8');
   }
 
   /**
@@ -47,10 +51,15 @@ export class AuthService {
   async getAccessToken(): Promise<string> {
     const token = await this.prisma.docusignToken.findFirst({
       orderBy: { createdAt: 'desc' },
+      select: {
+        accessToken: true,
+        refreshToken: true,
+        expiresAt: true,
+      },
     });
 
-    const now = new Date();
-    if (token && new Date(token.expiresAt).getTime() - this.expiryBufferMs > now.getTime()) {
+    const now = Date.now();
+    if (token && token.expiresAt.getTime() - this.expiryBufferMs > now) {
       return token.accessToken;
     }
 
@@ -70,7 +79,8 @@ export class AuthService {
    * Called by AuthConsentService after user grants consent
    */
   async saveTokenFromCallback(tokenResponse: TokenResponse): Promise<void> {
-    const expiresAt = new Date(Date.now() + tokenResponse.expires_in * 1000);
+    const now = Date.now();
+    const expiresAt = new Date(now + tokenResponse.expires_in * 1000);
     await this.prisma.docusignToken.create({
       data: {
         accessToken: tokenResponse.access_token,
@@ -104,7 +114,8 @@ export class AuthService {
       },
     );
 
-    const expiresAt = new Date(Date.now() + data.expires_in * 1000);
+    const now = Date.now();
+    const expiresAt = new Date(now + data.expires_in * 1000);
     await this.prisma.docusignToken.create({
       data: {
         accessToken: data.access_token,
@@ -153,12 +164,9 @@ export class AuthService {
       return data;
     } catch (error: any) {
       const resp = error?.response;
-      const message = resp?.data
-        ? JSON.stringify(resp.data)
-        : error?.message || 'Unknown error';
       const status = resp?.status;
       this.logger.error(
-        `DocuSign token request failed${status ? ` (status ${status})` : ''}: ${message}`,
+        `DocuSign token request failed${status ? ` (status ${status})` : ''}`,
       );
       throw new InternalServerErrorException('Failed to obtain DocuSign access token');
     }
