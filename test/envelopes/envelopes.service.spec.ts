@@ -9,6 +9,8 @@ jest.mock('fs', () => ({
   promises: {
     readFile: jest.fn().mockResolvedValue(Buffer.from('sample document')),
   },
+  existsSync: jest.fn().mockReturnValue(true),
+  readFileSync: jest.fn().mockReturnValue(''),
 }));
 
 describe('EnvelopesService', () => {

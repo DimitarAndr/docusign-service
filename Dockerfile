@@ -9,6 +9,7 @@ RUN npm ci
 
 COPY . .
 
+RUN npx prisma generate
 RUN npm run build
 
 FROM node:20-bullseye
@@ -22,4 +23,4 @@ COPY package*.json ./
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/src/main.js"]
