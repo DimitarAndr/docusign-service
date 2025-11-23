@@ -2,10 +2,40 @@
   "info": {
     "_postman_id": "6c061c37-3f0e-4b54-9b28-4c27f641af05",
     "name": "DocuSign Service",
-    "description": "Send envelopes via JWT-authenticated backend.",
+    "description": "End-to-end: send an envelope via backend (JWT handled server-side).\nPrereqs: service running, env vars set (integration key, user id, account id, private key path).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Get Consent URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/docusign/authorize?redirect=false",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "docusign",
+                "authorize"
+              ],
+              "query": [
+                {
+                  "key": "redirect",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
     {
       "name": "Envelopes",
       "item": [
@@ -21,7 +51,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"documentId\": \"sample-nda\",\n  \"recipient\": {\n    \"name\": \"Jane Doe\",\n    \"email\": \"jane@example.com\"\n  },\n  \"subject\": \"Please sign\",\n  \"message\": \"Thanks!\"\n}"
+              "raw": "{\n  \"documentId\": \"{{document_id}}\",\n  \"recipient\": {\n    \"name\": \"{{recipient_name}}\",\n    \"email\": \"{{recipient_email}}\"\n  },\n  \"subject\": \"{{subject}}\",\n  \"message\": \"{{message}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/envelopes",
@@ -60,6 +90,26 @@
     {
       "key": "base_url",
       "value": "http://localhost:3000"
+    },
+    {
+      "key": "document_id",
+      "value": "sample-nda"
+    },
+    {
+      "key": "recipient_name",
+      "value": "Jane Doe"
+    },
+    {
+      "key": "recipient_email",
+      "value": "jane@example.com"
+    },
+    {
+      "key": "subject",
+      "value": "Please sign"
+    },
+    {
+      "key": "message",
+      "value": "Thanks!"
     }
   ]
 }
