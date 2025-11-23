@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { EnvelopesService } from './envelopes.service';
 import { DocusignService } from '../docusign/docusign.service';
-import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { NotFoundException} from '@nestjs/common';
 
 describe('EnvelopesService', () => {
   let service: EnvelopesService;

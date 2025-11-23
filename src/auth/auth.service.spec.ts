@@ -4,7 +4,6 @@ import { HttpService } from '@nestjs/axios';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { InternalServerErrorException } from '@nestjs/common';
-import { of, throwError } from 'rxjs';
 
 jest.mock('fs/promises', () => ({
   readFile: jest.fn().mockResolvedValue('private-key'),
