@@ -85,6 +85,10 @@ npm run lint
 npm test
 ```
 
+## Envelope Storage & Status Polling
+- **Persistence:** Every sent envelope is recorded in the `SentEnvelope` table with the recipient, subject/message, DocuSign account, status, timestamps, and the raw DocuSign response.
+- **Polling:** A scheduled job (cron) runs every 30 minutes to pull status updates from DocuSign for non-terminal envelopes (not completed/declined/voided). Updated statuses are saved back to `SentEnvelope` along with the last check time and any error details. Keep polling on; consider webhooks as a future enhancement and use polling as fallback.
+
 ## Health & Readiness Endpoints
 
 ### `/health` - Health Check

@@ -1,6 +1,6 @@
 {
   "name": "docusign-service",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "scripts": {
     "start": "nest start",
     "start:dev": "nest start --watch",
