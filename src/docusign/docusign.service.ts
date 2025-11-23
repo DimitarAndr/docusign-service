@@ -11,35 +11,36 @@ export class DocusignService {
 
   /**
    * Performs a DocuSign API request. If a 401/invalid_token is returned,
-   * clears the cached token via the auth interceptor (by evicting headers)
-   * and retries once. If the second attempt fails, the error is bubbled up.
+   * retries once with a fresh token. Uses request-level config to avoid
+   * race conditions with concurrent requests.
    */
-  async request<T = unknown>(config: AxiosRequestConfig): Promise<T> {
+  async request<T = unknown>(config: AxiosRequestConfig, isRetry = false): Promise<T> {
     try {
       const { data } = await this.http.request<T>(config);
       return data;
-    } catch (error: any) {
-      const status = error?.response?.status;
-      const errData = error?.response?.data;
+    } catch (error: unknown) {
+      const status = (error as any)?.response?.status;
+      const errData = (error as any)?.response?.data;
       const isInvalidToken =
         status === 401 ||
         (typeof errData === 'object' && errData?.error === 'invalid_token');
 
-      if (!isInvalidToken) {
-        throw error;
+      if (!isInvalidToken || isRetry) {
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new InternalServerErrorException('DocuSign request failed');
       }
 
-      // Clear cached auth header to force interceptor to fetch a new token.
-      delete this.http.defaults.headers.common?.Authorization;
-
-      try {
-        const { data } = await this.http.request<T>(config);
-        return data;
-      } catch (retryError) {
-        throw retryError instanceof Error
-          ? retryError
-          : new InternalServerErrorException('DocuSign request failed after retry');
-      }
+      // Retry with fresh token by removing Authorization header
+      const retryConfig = {
+        ...config,
+        headers: {
+          ...config.headers,
+          Authorization: undefined,
+        },
+      };
+      return this.request<T>(retryConfig, true);
     }
   }
 }
